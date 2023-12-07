@@ -73,8 +73,15 @@ fn calculate_new_version(repository: &Repository, latest_release_oid: Info) -> V
     }
 
     match (major, minor, patch) {
-        (Some(_), _, _) => version.major += 1,
-        (_, Some(_), _) => version.minor += 1,
+        (Some(_), _, _) => {
+            version.major += 1;
+            version.minor = 0;
+            version.patch = 0
+        }
+        (_, Some(_), _) => {
+            version.minor += 1;
+            version.patch = 0
+        }
         (_, _, Some(_)) => version.patch += 1,
         (_, _, _) => {}
     }
