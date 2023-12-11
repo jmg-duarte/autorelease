@@ -1,3 +1,7 @@
+mod version;
+
+use version::Bump;
+
 use clap::Parser;
 use semver::Version;
 use std::path::PathBuf;
@@ -73,16 +77,9 @@ fn calculate_new_version(repository: &Repository, latest_release_oid: Info) -> V
     }
 
     match (major, minor, patch) {
-        (Some(_), _, _) => {
-            version.major += 1;
-            version.minor = 0;
-            version.patch = 0
-        }
-        (_, Some(_), _) => {
-            version.minor += 1;
-            version.patch = 0
-        }
-        (_, _, Some(_)) => version.patch += 1,
+        (Some(_), _, _) => version.bump_major(),
+        (_, Some(_), _) => version.bump_minor(),
+        (_, _, Some(_)) => version.bump_patch(),
         (_, _, _) => {}
     }
 
