@@ -10,7 +10,22 @@ use gix::{bstr::ByteSlice, revision::walk::Info, traverse::commit::Sorting, Repo
 
 #[derive(Parser)]
 struct App {
-    repository_directory: PathBuf,
+    /// The target repository directory. Defaults to the current directory.
+    ///
+    /// If the directory is not a `git` repository, its parents will be
+    /// checked recursively for `git` repositories.
+    #[arg(short, long = "target_dir", default_value = ".")]
+    target_directory: PathBuf,
+
+    /// Perform an empty release commit. Requires the index to be clean, use `--force` to ignore.
+    ///
+    /// The release commit is written as `release: <NEW_VERSION>`.
+    #[arg(short = 'r', long = "release", default_value_t = false)]
+    perform_release: bool,
+
+    /// Ignore the index status.
+    #[arg(short = 'f', default_value_t = false)]
+    force: bool,
 }
 
 // TODO: remove the unwrap
@@ -87,16 +102,19 @@ fn calculate_new_version(repository: &Repository, latest_release_oid: Info) -> V
 }
 
 fn main() {
-    let app = App::parse();
+    let mut app = App::parse();
+    // Always canonicalize path
+    app.target_directory = app.target_directory.canonicalize().unwrap();
+
     let mut repository = None;
-    for directory in app.repository_directory.ancestors() {
+    for directory in app.target_directory.ancestors() {
         if let Ok(repo) = gix::open(directory) {
             repository = Some(repo);
         }
     }
     let repository = repository.expect(&format!(
         "did not find a valid git repo in {:?}",
-        app.repository_directory
+        app.target_directory
     ));
 
     let latest_release_oid = find_latest_release(&repository).unwrap();
